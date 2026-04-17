@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>МУРИНО · Выживание с лобби</title>
+  <title>МУРИНО · Выживание с лобби (исправлено)</title>
   <style>
     * { box-sizing: border-box; user-select: none; }
     body { margin: 0; min-height: 100vh; background: #0a0a0a; display: flex; justify-content: center; align-items: center; font-family: 'Courier New', monospace; }
@@ -108,7 +108,7 @@
   "use strict";
 
   // ---------- КОНФИГУРАЦИЯ ----------
-  const WS_URL = 'wss://murino-production.up.railway.app'; // Замените на ваш сервер
+  const WS_URL = 'wss://murino-production.up.railway.app'; // Ваш сервер
   const TILE_SIZE = 48;
   const PLAYER_SPEED = 4.8;
   const RUN_MULTIPLIER = 1.6;
@@ -688,11 +688,10 @@
       this.socket = new WebSocket(WS_URL);
       this.socket.onmessage = (e) => {
         const data = JSON.parse(e.data);
-       if (data.type === 'lobby_created') {
-  this.lobbyCode = data.code;
-  this.clientId = data.playerId; // ← добавить
-  document.getElementById('lobbyCodeDisplay').textContent = data.code;
-}
+        if (data.type === 'lobby_created') {
+          this.lobbyCode = data.code;
+          this.clientId = data.playerId; // ← ВАЖНО: сохраняем ID
+          document.getElementById('lobbyCodeDisplay').textContent = data.code;
           document.querySelectorAll('.menu-screen').forEach(s=>s.style.display='none');
           document.getElementById('lobbyCreateMenu').style.display='flex';
           this.state='lobby_create';
@@ -702,7 +701,6 @@
           this.clientId = data.playerId;
           this.lobbyCode = data.code;
           document.querySelectorAll('.menu-screen').forEach(s=>s.style.display='none');
-          // ждём сигнала старта
           this.state='lobby_wait';
           this.connStatus.textContent = '🟢 В лобби';
         } else if (data.type === 'game_started') {
