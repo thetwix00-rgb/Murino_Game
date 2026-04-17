@@ -688,9 +688,11 @@
       this.socket = new WebSocket(WS_URL);
       this.socket.onmessage = (e) => {
         const data = JSON.parse(e.data);
-        if (data.type === 'lobby_created') {
-          this.lobbyCode = data.code;
-          document.getElementById('lobbyCodeDisplay').textContent = data.code;
+       if (data.type === 'lobby_created') {
+  this.lobbyCode = data.code;
+  this.clientId = data.playerId; // ← добавить
+  document.getElementById('lobbyCodeDisplay').textContent = data.code;
+}
           document.querySelectorAll('.menu-screen').forEach(s=>s.style.display='none');
           document.getElementById('lobbyCreateMenu').style.display='flex';
           this.state='lobby_create';
