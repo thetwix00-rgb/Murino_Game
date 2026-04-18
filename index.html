@@ -530,15 +530,54 @@
       }
       return true;
     }
-    patrol(delta) { /* сокращено для места, но полная реализация присутствует */ }
-    investigate(delta) { /* ... */ }
-    hunt(target, delta) { /* ... */ }
-    stalk(player, delta) { /* ... */ }
-    moveTowards(tx, ty, delta, spd) { /* ... */ }
+    patrol(delta) {
+      this.patrolTimer -= delta;
+      if(this.patrolTimer <= 0 || !this.targetPos) {
+        const rooms = this.floor.rooms;
+        if(rooms.length) {
+          const r = rooms[Math.floor(Math.random()*rooms.length)];
+          this.targetPos = { x: r.x + r.w/2 + (Math.random()-0.5)*r.w*0.6, y: r.y + r.h/2 + (Math.random()-0.5)*r.h*0.6 };
+        } else {
+          this.targetPos = { x: this.x+ (Math.random()-0.5)*10, y: this.y+(Math.random()-0.5)*10 };
+        }
+        this.patrolTimer = 5 + Math.random()*5;
+      }
+      this.moveTowards(this.targetPos.x, this.targetPos.y, delta, this.speed*0.7);
+    }
+    investigate(delta) {
+      if(this.lastNoisePos) {
+        const dist = Math.hypot(this.lastNoisePos.x-this.x, this.lastNoisePos.y-this.y);
+        if(dist < 1.5) { this.lastNoisePos = null; this.state = FogState.PATROL; }
+        else { this.moveTowards(this.lastNoisePos.x, this.lastNoisePos.y, delta, this.speed*0.9); }
+      } else this.state = FogState.PATROL;
+    }
+    hunt(target, delta) {
+      if(target) this.moveTowards(target.x, target.y, delta, this.speed*1.2);
+      else this.state = FogState.PATROL;
+    }
+    stalk(player, delta) {
+      if(!player) { this.state = FogState.PATROL; return; }
+      const angle = Math.atan2(player.y - this.y, player.x - this.x);
+      const flankAngle = angle + (Math.random()>0.5? 1.2 : -1.2);
+      const targetX = player.x + Math.cos(flankAngle)*7;
+      const targetY = player.y + Math.sin(flankAngle)*7;
+      this.moveTowards(targetX, targetY, delta, this.speed*0.9);
+    }
+    moveTowards(tx, ty, delta, spd) {
+      const dx = tx - this.x, dy = ty - this.y;
+      const len = Math.hypot(dx, dy);
+      if(len > 0.1) {
+        const step = Math.min(len, spd * delta);
+        const newX = this.x + (dx/len)*step, newY = this.y + (dy/len)*step;
+        if(this.floor.isWalkable(Math.floor(newX), Math.floor(newY))) {
+          this.x = newX; this.y = newY;
+        } else {
+          if(this.floor.isWalkable(Math.floor(this.x + (dx/len)*step), Math.floor(this.y))) this.x += (dx/len)*step;
+          else if(this.floor.isWalkable(Math.floor(this.x), Math.floor(this.y + (dy/len)*step))) this.y += (dy/len)*step;
+        }
+      }
+    }
   }
-
-  // Полные реализации методов Фога опущены для краткости, но они идентичны предыдущим версиям.
-  // В реальном файле они присутствуют.
 
   // ---------- МИР ----------
   class World {
@@ -565,7 +604,7 @@
     }
   }
 
-  // ---------- ОСНОВНОЙ КЛАСС ИГРЫ (с лобби) ----------
+  // ---------- ОСНОВНОЙ КЛАСС ИГРЫ ----------
   class Game {
     constructor(canvas) {
       this.canvas=canvas; this.ctx=canvas.getContext('2d');
@@ -762,7 +801,6 @@
           if (!this.player) return;
           if (this.player.downed) return;
           this.input.action = true;
-          // Проверка на воскрешение другого игрока
           if (this.socket) {
             const reviveTarget = this.findReviveTarget();
             if (reviveTarget) {
@@ -778,7 +816,7 @@
         if(e.code==='KeyE') {
           this.input.action = false;
           this.input.reviving = false;
-          this.player.beingRevived = false;
+          if (this.player) this.player.beingRevived = false;
         }
       });
     }
@@ -814,7 +852,6 @@
       if (!this.player) return;
       const floor = this.world.getCurrentFloor();
       
-      // Обработка смерти (downed) в локальном режиме
       if (!this.socket && this.player.health <= 0 && !this.player.downed) {
         this.player.downed = true;
       }
@@ -831,7 +868,6 @@
           this.gameoverScreen.style.display = 'flex';
           return;
         }
-        // Движение в downed (медленное)
         const isRunning = false;
         let dx=0, dy=0;
         if(this.keys['KeyW']) dy-=1; if(this.keys['KeyS']) dy+=1;
@@ -848,7 +884,6 @@
         }
         this.player.updateStats(delta, isMoving, false);
       } else {
-        // Обычное состояние
         const isRunning = this.keys['ShiftLeft'] || this.keys['ShiftRight'];
         let dx=0, dy=0;
         if(this.keys['KeyW']) dy-=1; if(this.keys['KeyS']) dy+=1;
@@ -872,7 +907,6 @@
         this.player.updateStats(delta, isMoving, isRunning && isMoving);
       }
 
-      // Воскрешение (только онлайн)
       if (this.socket && this.input.reviving) {
         const target = this.findReviveTarget();
         if (target) {
@@ -880,7 +914,6 @@
           this.reviveProgressEl.style.display = 'block';
           this.reviveFillEl.style.width = (this.player.reviveProgress / REVIVE_TIME * 100) + '%';
           if (this.player.reviveProgress >= REVIVE_TIME) {
-            // Воскресить цель
             this.socket.send(JSON.stringify({ type: 'revive', targetId: target.id }));
             this.player.reviveProgress = 0;
             this.reviveProgressEl.style.display = 'none';
@@ -893,7 +926,6 @@
         this.reviveProgressEl.style.display = 'none';
       }
 
-      // Взаимодействие (открытие, лут)
       if(this.input.action && !this.player.downed) {
         this.input.action = false;
         const tx=Math.floor(this.player.x), ty=Math.floor(this.player.y);
@@ -920,7 +952,6 @@
         }
       }
 
-      // Атака
       if(this.input.mouseDown && !this.player.downed && this.player.equippedItem?.type === ItemType.WEAPON) {
         const now = performance.now()/1000;
         if (now - this.player.lastAttackTime > this.player.attackCooldown) {
@@ -929,7 +960,6 @@
         }
       }
 
-      // Враги
       floor.cultists.forEach(c => c.update(delta, [this.player]));
       floor.cultists = floor.cultists.filter(c => c.health > 0);
       if(floor.fog) {
@@ -939,10 +969,8 @@
         if(dist < 4 && Math.random()<0.02) this.triggerScreamer();
       }
 
-      // Статус бар
       this.statusEl.innerHTML = `❤️ ${Math.floor(this.player.health)}/${this.player.maxHealth} &nbsp; ⚡ ${Math.floor(this.player.energy)}% &nbsp; 🍖 ${Math.floor(this.player.hunger)}% &nbsp; 💧 ${Math.floor(this.player.thirst)}% &nbsp; 🪫 этаж ${this.world.currentFloorLevel}`;
       
-      // Лестницы
       const tx=Math.floor(this.player.x), ty=Math.floor(this.player.y);
       if(floor.upStair && tx===floor.upStair.x && ty===floor.upStair.y) {
         this.world.changeFloor(1);
@@ -959,7 +987,7 @@
       
       if(this.screamerActive){ this.screamerTimer-=delta; if(this.screamerTimer<=0) this.screamerActive=false; }
       this.updateArmorSlot();
-       }
+    }
     startMinigame(cont, player) {
       this.minigameActive = true;
       this.minigameContainerData = cont;
@@ -1211,22 +1239,16 @@
       ctx.fillStyle = '#0a0a0a';
       ctx.fillRect(0,0,1200,800);
       ctx.globalCompositeOperation = 'destination-out';
-      if (this.player && this.player.health > 0 && this.player.equippedItem?.id === 'flashlight') {
-        const angle = Math.atan2(this.mouse.worldY - this.player.y, this.mouse.worldX - this.player.x);
-        const rad = FLASHLIGHT_RADIUS * TILE_SIZE;
+      if (this.player && this.player.health > 0) {
+        const rad = this.player.getLightRadius() * TILE_SIZE;
         const px = this.player.x*TILE_SIZE+offX, py = this.player.y*TILE_SIZE+offY;
         const g = ctx.createRadialGradient(px, py, 0, px, py, rad);
         g.addColorStop(0, 'rgba(255,250,230,1)');
-        g.addColorStop(0.5, 'rgba(240,220,180,0.6)');
+        g.addColorStop(0.6, 'rgba(240,220,180,0.8)');
         g.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.moveTo(px, py);
-        const leftAngle = angle - FLASHLIGHT_ANGLE/2;
-        const rightAngle = angle + FLASHLIGHT_ANGLE/2;
-        ctx.lineTo(px + Math.cos(leftAngle)*rad, py + Math.sin(leftAngle)*rad);
-        ctx.lineTo(px + Math.cos(rightAngle)*rad, py + Math.sin(rightAngle)*rad);
-        ctx.closePath();
+        ctx.arc(px, py, rad, 0, Math.PI*2);
         ctx.fill();
       }
       ctx.restore();
