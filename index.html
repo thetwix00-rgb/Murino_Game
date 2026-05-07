@@ -72,7 +72,7 @@
     <div id="charSelectMenu" class="menu-screen" style="display: none;">
       <div class="menu-title">ВЫБЕРИ ГЕРОЯ</div>
       <div class="character-select">
-        <div class="char-card" data-char="0"><div>🛠️</div><div>Инженер</div><div>фонарик с собой</div></div>
+        <div class="char-card" data-char="0"><div>🛠️</div><div>Инженер</div><div>стартовый лом</div></div>
         <div class="char-card" data-char="1"><div>🏃</div><div>Сталкер</div><div>быстрый</div></div>
         <div class="char-card" data-char="2"><div>💪</div><div>Крепыш</div><div>выносливый</div></div>
       </div>
@@ -121,9 +121,6 @@
   const RUN_MULTIPLIER = 1.6;
   const FOG_SPEED = 2.2;
   const CULTIST_SPEED = 2.8;
-  const LIGHT_RADIUS_DEFAULT = 4.0;
-  const FLASHLIGHT_RADIUS = 15.0; // радиус с фонариком
-  const FLASHLIGHT_ANGLE = Math.PI * 2; // полный круг (конус отключён)
   const HUNGER_RATE = 0.2;
   const THIRST_RATE = 0.3;
   const ENERGY_DRAIN_WALK = 2.0;
@@ -187,7 +184,6 @@
   function drawScrap(ctx,x,y,s){ ctx.fillStyle='#7a8a9a'; ctx.beginPath(); ctx.arc(x+s/2,y+s/2,s*0.3,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#5a6a7a'; ctx.beginPath(); ctx.arc(x+s/2-2,y+s/2-2,s*0.1,0,Math.PI*2); ctx.fill(); }
   function drawTape(ctx,x,y,s){ ctx.fillStyle='#4a6fa5'; ctx.fillRect(x+s*0.3,y+s*0.3,s*0.4,s*0.4); ctx.fillStyle='#3a5a8a'; ctx.fillRect(x+s*0.2,y+s*0.4,s*0.1,s*0.2); }
   function drawBattery(ctx,x,y,s){ ctx.fillStyle='#b0a050'; ctx.fillRect(x+s*0.3,y+s*0.4,s*0.4,s*0.4); ctx.fillStyle='#d0c060'; ctx.fillRect(x+s*0.45,y+s*0.3,s*0.1,s*0.1); ctx.fillStyle='#808080'; ctx.beginPath(); ctx.arc(x+s*0.3,y+s*0.5,2,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(x+s*0.7,y+s*0.5,2,0,Math.PI*2); ctx.fill(); }
-  function drawFlashlight(ctx,x,y,s){ ctx.fillStyle='#f0e68c'; ctx.fillRect(x+s*0.2,y+s*0.2,s*0.6,s*0.6); ctx.fillStyle='#c0b050'; ctx.fillRect(x+s*0.1,y+s*0.3,s*0.1,s*0.4); ctx.fillStyle='#ffffc0'; ctx.beginPath(); ctx.arc(x+s*0.7,y+s/2,s*0.15,0,Math.PI*2); ctx.fill(); }
   function drawCrowbar(ctx,x,y,s){ ctx.fillStyle='#6f6f6f'; ctx.fillRect(x+s*0.3,y+s*0.1,s*0.15,s*0.8); ctx.beginPath(); ctx.arc(x+s*0.375,y+s*0.1,s*0.12,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#a0a0a0'; ctx.beginPath(); ctx.arc(x+s*0.375,y+s*0.8,s*0.08,0,Math.PI*2); ctx.fill(); }
   function drawBottle(ctx,x,y,s){ ctx.fillStyle='#8fbc8f'; ctx.fillRect(x+s*0.35,y+s*0.2,s*0.3,s*0.5); ctx.fillStyle='#6f9f6f'; ctx.fillRect(x+s*0.4,y+s*0.1,s*0.2,s*0.1); ctx.fillStyle='#ffffff80'; ctx.beginPath(); ctx.arc(x+s/2,y+s*0.4,s*0.1,0,Math.PI*2); ctx.fill(); }
   function drawAxe(ctx,x,y,s){ ctx.fillStyle='#8b5a2b'; ctx.fillRect(x+s*0.4,y+s*0.2,s*0.2,s*0.6); ctx.fillStyle='#b04545'; ctx.beginPath(); ctx.moveTo(x+s*0.3,y+s*0.2); ctx.lineTo(x+s*0.7,y+s*0.2); ctx.lineTo(x+s*0.5,y+s*0.0); ctx.closePath(); ctx.fill(); }
@@ -195,6 +191,8 @@
   function drawKeycard(ctx,x,y,s){ ctx.fillStyle='#2a9d8f'; ctx.fillRect(x+s*0.2,y+s*0.2,s*0.6,s*0.4); ctx.fillStyle='#fff'; ctx.font='bold 10px monospace'; ctx.fillText('KEY',x+s*0.25,y+s*0.45); }
   function drawEarsArmor(ctx,x,y,s){ ctx.fillStyle='#c0a080'; ctx.beginPath(); ctx.ellipse(x+s/2,y+s/3,s*0.3,s*0.2,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#a08060'; ctx.beginPath(); ctx.ellipse(x+s*0.3,y+s*0.2,s*0.15,s*0.1,0,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.ellipse(x+s*0.7,y+s*0.2,s*0.15,s*0.1,0,0,Math.PI*2); ctx.fill(); }
   function drawFurArmor(ctx,x,y,s){ ctx.fillStyle='#8b6b4a'; ctx.fillRect(x+s*0.2,y+s*0.2,s*0.6,s*0.6); ctx.fillStyle='#6b4b2a'; ctx.fillRect(x+s*0.3,y+s*0.3,s*0.4,s*0.4); ctx.fillStyle='#a08060'; ctx.beginPath(); ctx.arc(x+s/2,y+s/2,s*0.15,0,Math.PI*2); ctx.fill(); }
+  function drawMarmalade(ctx,x,y,s){ ctx.fillStyle='#f0a0a0'; ctx.beginPath(); ctx.arc(x+s/2,y+s/2,s*0.3,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#d08080'; ctx.beginPath(); ctx.arc(x+s/2-3,y+s/2-3,3,0,Math.PI*2); ctx.fill(); }
+  function drawTasty(ctx,x,y,s){ ctx.fillStyle='#c0a0f0'; ctx.beginPath(); ctx.arc(x+s/2,y+s/2,s*0.3,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#a080d0'; ctx.beginPath(); ctx.arc(x+s/2+3,y+s/2+3,3,0,Math.PI*2); ctx.fill(); }
 
   const ItemsDB = [
     new Item('bread','Хлеб',ItemType.FOOD,0,true,5,{hungerRestore:-20, energyRestore:5},'Чёрствый хлеб.','#d4a76a', drawBread),
@@ -208,7 +206,6 @@
     new Item('battery','Батарейка',ItemType.MATERIAL,1,true,10,{},'Пальчиковая.','#b0a050', drawBattery),
     new Item('wire','Провода',ItemType.MATERIAL,0,true,12,{},'Медные жилы.','#b87333', (ctx,x,y,s)=>{ ctx.strokeStyle='#b87333'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(x+s*0.2,y+s*0.8); ctx.lineTo(x+s*0.8,y+s*0.2); ctx.stroke(); }),
     new Item('gear','Шестерня',ItemType.MATERIAL,1,true,6,{},'Маленькая шестерня.','#a0a0a0', (ctx,x,y,s)=>{ ctx.fillStyle='#a0a0a0'; ctx.beginPath(); ctx.arc(x+s/2,y+s/2,s*0.3,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#666'; ctx.beginPath(); ctx.arc(x+s/2,y+s/2,s*0.1,0,Math.PI*2); ctx.fill(); }),
-    new Item('flashlight','Фонарик',ItemType.TOOL,1,false,1,{light:true},'Источник света.','#f0e68c', drawFlashlight),
     new Item('crowbar','Монтировка',ItemType.WEAPON,1,false,1,{damage:15},'Тяжёлая.','#6f6f6f', drawCrowbar),
     new Item('bottle','Чекушка',ItemType.WEAPON,0,false,1,{damage:10},'Стеклянная бутылка.','#8fbc8f', drawBottle),
     new Item('axe','Топор',ItemType.WEAPON,2,false,1,{damage:25},'Пожарный топор.','#b04545', drawAxe),
@@ -218,6 +215,8 @@
     new Item('alcohol','Спирт',ItemType.MATERIAL,1,true,5,{healthRestore:-5, energyRestore:10},'Дезинфекция.','#b0e0e6', (ctx,x,y,s)=>{ ctx.fillStyle='#b0e0e6'; ctx.fillRect(x+s*0.3,y+s*0.2,s*0.4,s*0.6); }),
     new Item('meds','Таблетки',ItemType.MEDICAL,1,true,6,{healthRestore:18},'От нервов.','#f0b0b0', (ctx,x,y,s)=>{ ctx.fillStyle='#f0b0b0'; ctx.beginPath(); ctx.arc(x+s/2,y+s/2,s*0.25,0,Math.PI*2); ctx.fill(); }),
     new Item('soda','Газировка',ItemType.WATER,0,true,6,{thirstRestore:-15, energyRestore:8},'Сладкая вода.','#d0a050', (ctx,x,y,s)=>{ ctx.fillStyle='#d0a050'; ctx.fillRect(x+s*0.3,y+s*0.2,s*0.4,s*0.6); }),
+    new Item('marmalade','Мармеладность',ItemType.FOOD,1,true,5,{hungerRestore:-10},'Сладкая мармеладка.','#f0a0a0', drawMarmalade),
+    new Item('tasty','Вкусность',ItemType.FOOD,2,true,3,{hungerRestore:-25, thirstRestore:-25},'Очень вкусно!','#c0a0f0', drawTasty),
     new Item('ears_armor','Уши зайца-бурмалдайца',ItemType.ARMOR,2,false,1,{speedChance:0.2, speedBoost:1.5},'Шанс ускориться при получении урона.','#c0a080', drawEarsArmor),
     new Item('fur_armor','Мех зайца-бурмалдайца',ItemType.ARMOR,2,false,1,{maxHealthBonus:0.2},'Увеличивает макс. здоровье на 20%.','#8b6b4a', drawFurArmor),
   ];
@@ -226,7 +225,6 @@
     { result: 'bandage', count:1, ingredients:[['cloth',2], ['tape',1]] },
     { result: 'medkit', count:1, ingredients:[['bandage',2], ['alcohol',1], ['tape',2]] },
     { result: 'crowbar', count:1, ingredients:[['scrap',4], ['tape',2]] },
-    { result: 'flashlight', count:1, ingredients:[['battery',2], ['scrap',2], ['tape',1]] },
     { result: 'lockpick', count:2, ingredients:[['wire',2], ['scrap',1]] },
     { result: 'bottle', count:1, ingredients:[['scrap',1], ['tape',1]] },
   ];
@@ -381,7 +379,7 @@
       this.inventory = new Inventory(16); this.charType=charType;
       this.inventory.addItem(ItemsDB.find(i=>i.id==='bread'),2);
       this.inventory.addItem(ItemsDB.find(i=>i.id==='water'),1);
-      if(charType===0) this.inventory.addItem(ItemsDB.find(i=>i.id==='flashlight'),1);
+      if(charType===0) this.inventory.addItem(ItemsDB.find(i=>i.id==='crowbar'),1); // инженер получает лом
       this.lastFootstepTime = 0;
       this.equippedItem = null;
       this.equippedArmor = null;
@@ -393,8 +391,6 @@
       this.reviveProgress = 0;
       this.beingRevived = false;
     }
-    hasFlashlight() { return this.equippedItem?.id === 'flashlight'; }
-    getLightRadius() { return this.hasFlashlight() ? FLASHLIGHT_RADIUS : LIGHT_RADIUS_DEFAULT; }
     updateStats(delta, isMoving, isRunning) {
       if (this.downed) {
         this.downedTimer += delta;
@@ -778,6 +774,7 @@
       let itemToDrop = null;
       if (this.player.equippedItem) {
         itemToDrop = this.player.equippedItem;
+        this.player.inventory.removeItem(itemToDrop.id, 1);
         this.player.equippedItem = null;
       } else if (this.player.inventory.slots.length > 0) {
         const slot = this.player.inventory.slots[0];
@@ -822,13 +819,10 @@
     }
     findReviveTarget() {
       if (!this.player) return null;
-      const localPlayer = this.player;
       for (let p of this.onlinePlayers.values()) {
         if (p.downed) {
-          const dist = Math.hypot(localPlayer.x - p.x, localPlayer.y - p.y);
-          if (dist < 2.0) {
-            return p;
-          }
+          const dist = Math.hypot(this.player.x - p.x, this.player.y - p.y);
+          if (dist < 2.0) return p;
         }
       }
       return null;
@@ -868,7 +862,6 @@
           this.gameoverScreen.style.display = 'flex';
           return;
         }
-        const isRunning = false;
         let dx=0, dy=0;
         if(this.keys['KeyW']) dy-=1; if(this.keys['KeyS']) dy+=1;
         if(this.keys['KeyA']) dx-=1; if(this.keys['KeyD']) dx+=1;
@@ -1224,7 +1217,6 @@
         ctx.fillStyle='white'; ctx.font='bold 14px monospace'; ctx.fillText('P'+id, sx-8, sy-20);
         ctx.shadowBlur=0;
       });
-      this.applyLighting(ctx, offX, offY);
       if(this.screamerActive) this.drawScreamer(ctx);
       if (this.minigameActive) {
         this.minigameProgress += this.minigameDirection * 0.016 * 80;
@@ -1232,26 +1224,6 @@
         if (this.minigameProgress < 0) { this.minigameProgress = 0; this.minigameDirection = 1; }
         this.minigameFill.style.width = this.minigameProgress + '%';
       }
-    }
-    applyLighting(ctx, offX, offY) {
-      ctx.save();
-      ctx.globalCompositeOperation = 'multiply';
-      ctx.fillStyle = '#0a0a0a';
-      ctx.fillRect(0,0,1200,800);
-      ctx.globalCompositeOperation = 'destination-out';
-      if (this.player && this.player.health > 0) {
-        const rad = this.player.getLightRadius() * TILE_SIZE;
-        const px = this.player.x*TILE_SIZE+offX, py = this.player.y*TILE_SIZE+offY;
-        const g = ctx.createRadialGradient(px, py, 0, px, py, rad);
-        g.addColorStop(0, 'rgba(255,250,230,1)');
-        g.addColorStop(0.6, 'rgba(240,220,180,0.8)');
-        g.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(px, py, rad, 0, Math.PI*2);
-        ctx.fill();
-      }
-      ctx.restore();
     }
     drawScreamer(ctx) {
       ctx.save();
